@@ -1,0 +1,206 @@
+
+
+* Part 1
+
+- seed -> soil 
+- soil -> fertilizer
+- fertilizer -> water
+- water -> light
+- light -> temperature
+- temperature -> humidity
+- humidity -> location
+
+need to do a generic map nums and a getmaps
+
+- 268585666 to low
+- 621354867
+#+BEGIN_SRC python :results output
+import re
+
+puzzleInput = [i for i in list(map((lambda line : line.strip()), open("./day5.txt", "r").readlines())) if i != ""]
+
+seedNums = [int(i) for i in puzzleInput[0].split(" ") if i != "seeds:"]
+
+def splitMaps(puzzle):
+
+    seedDict = {}
+
+    for item in puzzle: # should be a str
+        if (re.search(".+:", item)):
+            key = item[:-5:]
+            seedDict[key] = []
+        else:
+            seedDict[key].append([int(i) for i in item.split(" ")])
+
+    return seedDict
+
+mapDict = splitMaps(puzzleInput[1:])
+
+# want a single list of the map list for a given map
+def createMap(mapLine, sourceNum): 
+    mapDest = mapLine[0]
+    mapSource = mapLine[1]
+    mapSteps = mapLine[2]
+
+    if sourceNum in range(mapSource, mapSource + mapSteps):
+        return mapDest + (sourceNum - mapSource)
+
+    return sourceNum
+    
+
+#print(seedNums)
+#print(seedDict)
+mappedSeeds = {}
+for seed in seedNums:
+    mappedSeeds[seed] = False
+
+newMaps = {}
+
+for key in mapDict:
+    #print(key)
+    # interate through each mapping
+    for mapLine in mapDict[key]:
+        #print("--- {} ---".format(mapLine))
+        for seed in mappedSeeds:
+
+            if (mappedSeeds[seed] == True):
+                newMaps[seed] = True
+
+            else:
+                newMapNum = createMap(mapLine, seed)
+                if (newMapNum != seed):
+                    newMaps[newMapNum] = True
+                else:
+                    newMaps[seed] = False
+            #print("seed: {} | mapped to {}".format(seed,createMap(item,seed)))
+    
+   # after all seeds are mapped, then reset mappedSeed IDs
+        mappedSeeds = newMaps
+        newMaps = {}
+
+    # after all maps in a key are done, then reset mapped flag
+    for seedKey in mappedSeeds:
+        mappedSeeds[seedKey] = False
+
+#print(mappedIterations)
+#print(seedNums)
+#print(mappedSeeds)
+
+print(min([i for i in mappedSeeds]))
+#+END_SRC
+
+#+RESULTS:
+: 35
+
+* Part 2
+
+#+BEGIN_SRC python :results output :tangle
+
+puzzleInput = [i for i in list(map((lambda line : line.strip()), open("./day5.txt", "r").readlines())) if i != ""]
+
+seedsList = [int(i) for i in puzzleInput[0].split(" ") if i != "seeds:"]
+
+seeds = []
+count = 0
+for num in seedsList:
+    if count % 2 == 0:
+        seeds.append((num, num + seedsList[count+1] - 1))
+
+    count += 1
+
+maps = []
+currentMap = []
+for line in puzzleInput[2:]:
+    lineSplit = line.split(" ")
+
+    if line == "":
+        continue
+
+    if lineSplit[1] == "map:":
+        maps.append(currentMap)
+        #print(lineSplit)
+        currentMap = []
+        continue
+    if lineSplit[1] != "map:":
+        #print(lineSplit)
+        # converting to some of the math now for the maps
+        # source, source_end, and adjustment to dest if source match
+        destStart = int(lineSplit[0])
+        sourceStart = int(lineSplit[1])
+        rangeLength = int(lineSplit[2])
+        mathOnMap = (sourceStart, sourceStart+rangeLength-1, destStart-sourceStart)
+        currentMap.append(mathOnMap)
+
+maps.append(currentMap)
+#print(seeds)
+#print(maps)
+
+# a little rough but we got there
+
+def applyMaps():
+    lowest = 
+
+    for seed in seeds:
+        # default the mapped destination is the same as its current locaion
+        destinations = []
+        destinations.append(seed)
+
+        # check a seed against all of the maps 
+        # also goes down the tree of seeds, instead all stepping into each section 
+        # potentially so rework here if there is any overlap of the seeds
+        # fixes my original fault with the "already mapped" flag
+        for mapRange in maps:
+            # this only worries me if there are mapStarts or mapEnds that
+            sources = destinations
+            destinations = []
+
+            while len(sources) > 0:
+                # popping it off sources will not rerun it for the current map
+                source = sources.pop()
+                sourceStart, sourceEnd = source
+                for mapStart, mapEnd, adjust in mapRange:
+                    # if source is wholly within mapped range
+                    if sourceStart >= mapStart and sourceEnd <= mapEnd:
+                        destinations.append((sourceStart+adjust, sourceEnd+adjust))
+                        break
+                    # if the source is wholly outoside mapped range
+                    if sourceEnd < mapStart or sourceStart > mapEnd:
+                        continue
+                    # if if the source end is in but the source start is not
+                    if sourceStart < mapStart:
+                        sources.append((sourceStart, mapStart-1))
+                        sources.append((mapStart, sourceEnd))
+                        break
+                    # if the source start is in but the source end is not
+                    if sourceEnd > mapEnd:
+                        sources.append((sourceStart, mapEnd))
+                        sources.append((mapEnd+1, sourceEnd))
+                        break
+
+        seedLowest = lowestLocation(destinations)
+        lowest = min(lowest, seedLowest)
+    return lowest
+
+def lowestLocation(locations):
+    lowest = locations[0][0]
+    for location in locations:
+        lowest = min(location[0], lowest)
+    return lowest
+
+def getLowestLoc():
+    lowest = 
+    for range in maps[6]:
+
+
+lowest = applyMaps()
+
+print(lowest)
+
+
+
+#+END_SRC
+
+#+RESULTS:
+: 15880236
+
+* NEVER AGAIN

@@ -1,0 +1,152 @@
+
+
+
+* Prommpt 
+
+
+** Part 1 
+
+Of course, the actual engine schematic is much larger. What is the sum of all of the part numbers in the engine schematic?
+
+1. Read until a symbol
+2. get rowNum and colNum
+3. check [rowNum - 1, colNum - 1] ... [rowNum + 1, colNum + 1] for a digit
+4. if digit, then pass rowNum colNum to get surrounding other numbers until not digit
+5. pass back to list of part numbers
+6. Add up all part numbers
+
+note: unsure if I need to check for duplicates
+
+
+#+BEGIN_SRC python :results output :session part2
+import string
+
+punctuation = [i for i in string.punctuation if i != '.']
+
+puzzleInput = open("day3.txt", "r").readlines()
+
+def getLineSymbolLocations(line: str, symbols):
+    colNums = []
+    colCount = 0
+    for item in line:
+        for symb in symbols:
+            if symb in item:
+                #print("ColNum {}: Found {}!".format(colCount, symb))
+                colNums.append(colCount)
+
+        colCount += 1
+    return colNums
+
+def checkForPartNums(rowNum, colNum, rows):
+    partNums = []
+    lastRow = len(rows) - 1
+
+    # row above checking (can't do row 0)
+    if ((rows[rowNum - 1][colNum - 1]) in string.digits) and (rowNum != 0):
+        partNums.append(getFullPartNum(rows[rowNum - 1], (colNum - 1)))
+    if ((rows[rowNum - 1][colNum]) in string.digits) and (rowNum != 0):
+        partNums.append(getFullPartNum(rows[rowNum - 1], colNum))
+    if ((rows[rowNum - 1][colNum + 1]) in string.digits) and (rowNum != 0):
+        partNums.append(getFullPartNum(rows[rowNum - 1], (colNum + 1)))
+
+    # same row checking
+    if (rows[rowNum][colNum - 1]) in string.digits:
+        partNums.append(getFullPartNum(rows[rowNum], (colNum - 1)))
+    if (rows[rowNum][colNum + 1]) in string.digits:
+        partNums.append(getFullPartNum(rows[rowNum], (colNum + 1)))
+
+    # row below checking (can't do last row)
+    if ((rows[rowNum + 1][colNum - 1]) in string.digits) and (rowNum !=lastRow):
+        partNums.append(getFullPartNum(rows[rowNum + 1], (colNum - 1)))
+    if ((rows[rowNum + 1][colNum]) in string.digits) and (rowNum != lastRow):
+        partNums.append(getFullPartNum(rows[rowNum + 1], colNum))
+    if ((rows[rowNum + 1][colNum + 1]) in string.digits) and (rowNum != lastRow):
+        partNums.append(getFullPartNum(rows[rowNum + 1], (colNum + 1)))
+
+
+    return partNums
+
+
+def getFullPartNum(row, colNum):
+
+    fullPartNum = row[colNum]
+
+    # get left side first
+    for item in row[colNum-1::-1]:
+        if item not in string.digits:
+            break
+
+        fullPartNum = item + fullPartNum
+
+    for item in row[colNum+1::]:
+        if item not in string.digits:
+            break
+        fullPartNum = fullPartNum + item
+
+    return int(fullPartNum)
+
+count = 0
+partNums = []
+for line in puzzleInput:
+    lineSymbols = getLineSymbolLocations(line, punctuation)
+    if lineSymbols:
+        for item in lineSymbols:
+            partNumsSet = set(checkForPartNums(count, item, puzzleInput))
+            partNums.append(list(partNumsSet))
+
+    count += 1
+
+result = 0
+
+for line in partNums:
+    for num in line:
+        result += num
+
+print(result)
+
+
+#+END_SRC
+
+#+RESULTS:
+: 539637
+
+
+** Part 2
+
+What is the sum of all of the gear ratios in your engine schematic?
+
+#+BEGIN_SRC python :results output :session part2
+count = 0
+partNums = []
+gearNums = []
+
+for line in puzzleInput:
+    lineSymbolsLocation = getLineSymbolLocations(line, punctuation)
+    if lineSymbolsLocation:
+        for colLoc in lineSymbolsLocation:
+            partNumsSet = set(checkForPartNums(count, colLoc, puzzleInput))
+            partNumList = list(partNumsSet)
+            partNums.append(partNumList)
+            if line[colLoc] == "*":
+                #print("[!] Found a *")
+                if len(partNumList) == 2:
+                    gearRatio = partNumList[0] * partNumList[1]
+                    #print(type(gearRatio))
+                    gearNums.append(gearRatio)
+    count += 1
+
+
+
+part2result = 0
+
+for gear in gearNums:
+    part2result += gear
+
+print(part2result)
+
+#+END_SRC
+
+#+RESULTS:
+: 82818007
+
+

@@ -1,0 +1,203 @@
+
+
+* Part 1
+
+- first find the possible two columns that reflect 
+- then check to see if that reflect as far out as possible (dropping columns as offset)
+
+- 11830 too low
+
+#+BEGIN_SRC python :results output
+grid = list(map((lambda line : line.strip()), open("./day13.txt", "r").readlines()))
+
+def calcSum(num_cols_left, num_rows_above):
+    return num_cols_left + (num_rows_above * 100)
+
+def readInGrids(grid):
+    grids = []
+    section = []
+    for i, line in enumerate(grid):
+        if line == "":
+             grids.append(section)
+             section = []
+        else:
+            section.append(line)
+
+    grids.append(section)
+    return grids
+
+def checkMirror(line1, line2):
+    if line1 == line2:
+        return True
+    else:
+        return False
+
+def convertVertToLine(grid, col_num):
+    line = []
+    for row in grid:
+        for i, ch in enumerate(row):
+            if i == col_num:
+                line.append(ch)
+
+    return line
+
+
+grids = readInGrids(grid)
+
+def checkVerticalGrid(grid):
+    grid_row_max = len(grid[0])-1
+    for row in grid:
+        for i, ch in enumerate(row):
+            if i == (grid_row_max):
+                return 0
+
+            line1 = convertVertToLine(grid, i)
+            line2 = convertVertToLine(grid, i+1)
+
+            if checkMirror(line1, line2) and (i < grid_row_max - 1) and (i > 0):
+                # if even on both sides
+                if (grid_row_max - i) == i + 1:
+                    #print("vertical: both side")
+                    accFlag = 1
+                    for j in range(i, -1, -1):
+                        l_offset = j
+                        r_offset = (grid_row_max - j) + 1
+
+                        line1 = convertVertToLine(grid, l_offset)
+                        line2 = convertVertToLine(grid, r_offset)
+
+                        if checkMirror(line1, line2):
+                            accFlag += 1
+
+                    if accFlag == (i + 1):
+                        return i+1
+
+                # more towards max (right side)
+                elif (grid_row_max - i) < i + 1:
+                    #print("vertical: towards max (right side)")
+                    accFlag = 1
+                    for j in range(i+2, grid_row_max + 1):
+                        l_offset = grid_row_max - j + 1
+                        r_offset = j
+
+                        line1 = convertVertToLine(grid, l_offset)
+                        line2 = convertVertToLine(grid, r_offset)
+
+                        if checkMirror(line1, line2):
+                            accFlag += 1
+
+                    if accFlag == (grid_row_max - i):
+                        return i+1
+
+                # more towards 0 (left side)
+                elif (grid_row_max - i) > i + 1:
+                    accFlag = 1
+                    for j in range(i+2, grid_row_max - i + 1):
+                        l_offset = j - i - accFlag
+                        r_offset = j
+
+                        line1 = convertVertToLine(grid, l_offset)
+                        line2 = convertVertToLine(grid, r_offset)
+ 
+                        if not checkMirror(line1, line2):
+                            break
+
+                        accFlag += 1
+
+                    if accFlag == (i + 1):
+                        return i+1
+                
+
+
+            elif checkMirror(line1, line2) and ((i == grid_row_max - 1) or (i == 0)):
+                    return i+1
+    return 0            
+
+
+def checkHorizontalGrid(grid):
+    grid_row_max = len(grid)-1
+    for i, row in enumerate(grid):
+        if i == (grid_row_max):
+            return 0
+        line1 = row
+        line2 = grid[i+1]
+        if checkMirror(line1, line2) and (i < grid_row_max - 1) and (i > 0):
+            # if even on both sides
+            if (grid_row_max - i) == i + 1:
+                #print("horizontal: both side")
+                accFlag = 1
+                for j in range(i, -1, -1):
+                    l_offset = j
+                    r_offset = (grid_row_max - j) + 1
+
+                    line1 = grid[l_offset]
+                    line2 = grid[r_offset]
+
+                    if checkMirror(line1, line2):
+                        accFlag += 1
+
+                if accFlag == (i + 1):
+                    return i+1
+
+            # more towards max (right side)
+            elif (grid_row_max - i) < i + 1:
+                #print("horizontal: towards max (end of rows)")
+                accFlag = 1
+                for j in range(i+2, grid_row_max + 1):
+                    l_offset = grid_row_max - j + 1
+                    r_offset = j
+
+                    line1 = grid[l_offset]
+                    line2 = grid[r_offset]
+
+                    if checkMirror(line1, line2):
+                        accFlag += 1
+
+                if accFlag == (grid_row_max - i):
+                    return i+1
+
+            # more towards 0 (left side)
+            elif (grid_row_max - i) > i + 1:
+                #print("horizontal: toward beginning of zero")
+                accFlag = 1
+                for j in range(i+2, grid_row_max - i + 1):
+                    l_offset = j - i - accFlag
+                    r_offset = j
+
+                    line1 = grid[l_offset]
+                    line2 = grid[r_offset]
+ 
+                    if checkMirror(line1, line2):
+                        accFlag += 1
+
+                if accFlag == (i + 1):
+                    return i+1
+
+        elif checkMirror(line1, line2) and ((i == grid_row_max - 1) or (i == 0)):
+                return i+1
+    return 0            
+
+
+
+
+    
+#print(grids)
+
+def part1():
+
+    cols = 0
+    rows = 0
+    for grid in grids:
+        cols += checkVerticalGrid(grid)
+        rows += checkHorizontalGrid(grid)
+
+    part1results = calcSum(cols, rows)
+    print(part1results)
+
+
+part1()
+#+END_SRC
+
+#+RESULTS:
+: 11830
+

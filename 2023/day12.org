@@ -1,0 +1,54 @@
+#+title: Day12
+
+
+* Part 1
+
+#+BEGIN_SRC python :results output
+
+grid = list(map((lambda line : line.strip()), open("./day12_sample.txt", "r").readlines()))
+
+cond_record = []
+arrangement_record = []
+for line in grid:
+    condition_record, arrangements = line.split()
+    arrangements = tuple(map(int, arrangements.split(",")))
+    cond_record.append(condition_record)
+    arrangement_record.append(arrangements)
+
+
+def count_diff_arrangements(line, argmt):
+    if line == "":
+        if argmt == ():
+            return 1
+        else:
+            return 0
+    if argmt == ():
+        if "#" in line:
+            return 0
+        else:
+            return 1
+
+    result = 0
+
+    if line[0] in ".?":
+        result += count_diff_arrangements(line[1:], argmt)
+
+    if line[0] in "#?":
+        if argmt[0] <= len(line) and "." not in line[:argmt[0]] and (argmt[0] == len(line) or line[argmt[0]] != "#"):
+            result += count_diff_arrangements(line[argmt[0] + 1:], argmt[1:])
+
+    return result
+
+part1results = 0
+for i in range(0, len(grid)):
+    part1results += count_diff_arrangements(cond_record[i], arrangement_record[i])
+    
+
+print(part1results)
+
+
+
+#+END_SRC
+
+#+RESULTS:
+: 7169

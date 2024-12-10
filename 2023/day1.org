@@ -1,0 +1,151 @@
+
+
+* Prompt
+
+
+* Python
+
+** Part 1
+
+- read puzzle input into different strings for each line
+- read each line for first number (also last) for each number until last
+- when all lines are read, add all numbers
+
+
+
+** Part 2
+
+Your calculation isn't quite right. It looks like some of the digits are actually spelled out with letters: one, two, three, four, five, six, seven, eight, and nine also count as valid "digits".
+
+Equipped with this new information, you now need to find the real first and last digit on each line. For example:
+
+In this example, the calibration values are 29, 83, 13, 24, 42, 14, and 76. Adding these together produces 281.
+
+What is the sum of all of the calibration values?
+
+#+BEGIN_SRC python :results output :var puzzleInput=puzzle-input
+#!/usr/bin/python3
+
+
+def readPuzzleInput(puzzleStr: str):
+    puzzleList = []
+    puzzleLine = ""
+
+    for item in puzzleStr: #single characters include \n
+        puzzleLine = puzzleLine + item
+        if item == "\n":
+            puzzleList.append(puzzleLine)
+            puzzleLine = "" 
+
+    return puzzleList
+
+
+def checkForFirstNum(segment: str): 
+    splIntDict = {"one":1, "two":2, "three":3, "four":4, "five":5, "six":6, "seven":7, "eight":8, "nine":9}
+    value = []
+    subSeg = ""
+
+    for item in segment:
+        subSeg = subSeg + item
+
+        for key in splIntDict:
+            if key in subSeg:
+                value.append(splIntDict[key])
+                #value = value + checkForSpelledOut(segment[len(subSeg):])
+                return value
+
+
+    return value
+
+def checkForLastNum(segment: str):
+    splIntDict = {"eno":1, "owt":2, "eerht":3, "ruof":4, "evif":5, "xis":6, "neves":7, "thgie":8, "enin":9}
+    value = []
+    subSeg = ""
+    segmentRev = segment[::-1]
+
+    for item in segmentRev:
+        subSeg = subSeg + item
+
+        for key in splIntDict:
+            if key in subSeg:
+                value.append(splIntDict[key])
+                #value = value + checkForSpelledOut(segment[len(subSeg):])
+                return value
+
+    return value
+
+
+def checkPuzLine(line: str):
+            
+    lineNums = []
+    accChars = ""
+    itemCount = 1 # since len() doesn't care about starting at 0 
+
+    for item in line:
+
+        try:
+            digit = int(item)
+
+            lineNums = lineNums + checkForFirstNum(accChars)
+            lineNums.append(digit)
+
+            accChars = ""
+
+        except:
+            accChars = accChars + item
+
+            lineNums = lineNums + checkForFirstNum(accChars)
+
+
+        if itemCount >= len(line):
+            lineNums = lineNums + checkForLastNum(accChars)
+
+        itemCount = itemCount + 1
+
+    return lineNums
+    
+
+def calcPuzResult(intLists):
+    result = 0
+
+    for item in intLists:
+        if item:
+            first = str(item[0])
+            last = str(item[-1])
+            combined = first + last
+            combinedInt = int(combined)
+            result = result + combinedInt
+
+    return result
+
+puzList = readPuzzleInput(puzzleInput)
+puzIntList = []
+for line in puzList:
+    puzIntList.append(checkPuzLine(line))
+print(calcPuzResult(puzIntList))
+#+END_SRC
+
+#+RESULTS:
+: 54578
+
+* OpenAI generating Python
+
+** OpenAI Setup
+
+#+BEGIN_SRC python :results output
+from openai import OpenAI
+client = OpenAI()
+
+completion = client.chat.completions.create(
+  model="gpt-3.5-turbo",
+  messages=[
+    {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+    {"role": "user", "content": "Compose a poem that explains the concept of recursion in programming."}
+  ]
+)
+
+print(completion.choices[0].message)
+
+#+END_SRC
+
+#+RESULTS:

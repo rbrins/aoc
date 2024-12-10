@@ -1,0 +1,685 @@
+* Part 1
+
+The pipes are arranged in a two-dimensional grid of tiles:
+
+    | is a vertical pipe connecting north and south.
+    - is a horizontal pipe connecting east and west.
+    L is a 90-degree bend connecting north and east.
+    J is a 90-degree bend connecting north and west.
+    7 is a 90-degree bend connecting south and west.
+    F is a 90-degree bend connecting south and east.
+    . is ground; there is no pipe in this tile.
+    S is the starting position of the animal; there is a pipe on this tile, but your sketch doesn't show what shape the pipe has.
+
+- can tell what S is by the surrounding tiles
+
+#+BEGIN_SRC python :results output :tangle day10.py :session day10
+
+puzzleInput = list(map((lambda line : line.strip()), open("./day10_sample.txt", "r").readlines()))
+
+
+class tile:
+    def __init__(self, tileType, x, y):
+        self.tile = tileType
+        self.x = x
+        self.y = y
+        self.inside = False
+
+    def __str__(self):
+        return f'Tile Type: {self.tile} at Position: ({self.x}, {self.y})'
+
+    def getNeighborTiles(self, grid):
+        
+        match self.tile:
+            case "|":
+                self.neighbors = [getPosition(grid, self.x, self.y-1), getPosition(grid, self.x, self.y+1)]
+
+            case "-":
+                self.neighbors = [getPosition(grid, self.x-1, self.y), getPosition(grid, self.x+1, self.y)]
+
+            case "L":
+                self.neighbors = [getPosition(grid, self.x, self.y-1), getPosition(grid, self.x+1, self.y)]
+
+            case "J":
+                self.neighbors = [getPosition(grid, self.x, self.y-1), getPosition(grid, self.x-1, self.y)]
+
+            case "7":
+                self.neighbors = [getPosition(grid, self.x, self.y+1), getPosition(grid, self.x-1, self.y)]
+
+            case "F":
+                self.neighbors = [getPosition(grid, self.x+1, self.y), getPosition(grid, self.x, self.y+1)]
+
+            case ".":
+                self.neighbors = []
+
+    def get_S_type(self, grid):
+        n = grid[self.y-1][self.x].tile
+        e = grid[self.y][self.x+1].tile
+        s = grid[self.y+1][self.x].tile
+        w = grid[self.y][self.x-1].tile
+        options = ["|", "-", "L", "J", "7", "F"]
+        if n in ["|", "7", "F"]:
+            options = [i for i in options if i not in ["-", "7", "F"]]
+            #print(f'north value: {n}, options: {options}')
+
+        if e in ["-", "J", "7"]:
+            options = [i for i in options if i not in ["J", "7", "|"]]
+            #print(f'east value: {e}, options: {options}')
+
+        if s in ["|", "J", "L"]:
+            options = [i for i in options if i not in ["-", "L", "J"]]
+            #print(f'south value: {s}, options: {options}')
+
+        if w in ["-", "L", "F"]:
+            options = [i for i in options if i not in ["|", "L", "F"]]
+            #print(f'west value: {w}, options: {options}')
+
+        assert(len(options) == 1)
+        self.tile = options[0]
+
+def createGrid(puzzleInput):
+    grid = []
+    row = []
+    x_count = 0
+    y_count = 0
+    for line in puzzleInput:
+        for char in line:
+            row.append(tile(char, x_count, y_count))
+            x_count += 1
+        x_count = 0
+        grid.append(row)
+        row = []
+        y_count += 1
+
+    return grid
+
+def printGrid(grid):
+    for row in grid:
+        for item in row:
+            print(item)
+
+def getPosition(grid, x, y):
+    #print(grid[y][x])
+    return grid[y][x]
+
+def findSPosition(grid):
+    x_count = 0
+    y_count = 0
+    for row in grid:
+        for item in row:
+            if item.tile == "S":
+                print(f'Found "S" at: ({x_count}, {y_count})')
+                return item
+
+            x_count += 1
+        x_count = 0
+        y_count += 1
+
+def getNextTile(curr, prev):
+    #neighbor_1 = curr.neighbors[0]
+    #neighbor_2 = curr.neighbors[1]
+    #print(f'Current:   {curr}')
+    #print(f'Previous:  {prev}')
+    #print(f'neigh 1:   {neighbor_1}')
+    #print(f'neigh 2:   {neighbor_2}')
+    #if neighbor_1 == prev:
+    #    return neighbor_2
+    #else:
+    #    return neighbor_1
+    try:
+        for i in curr.neighbors:
+            if i != prev:
+                return i
+    except:
+        print("You done fucked up")
+        print(f'Current:   {curr}')
+        print(f'Previous:  {prev}')
+
+def mapLoop(grid, start):
+    
+    currTile = start.neighbors[0]
+    #print(currTile)
+
+    prevTile = start
+    startFound = 0
+    count = 0
+    while (not startFound):
+        #print(currTile)
+        temp = currTile 
+        currTile = getNextTile(currTile, prevTile)
+        #print(currTile)
+        prevTile = temp
+        #print(currTile)
+        count += 1
+        if currTile == start:
+            print("Start Found")
+            print(f'Previous Tile: {prevTile}')
+            startFound = 1
+    return count
+    
+def mapNeighbors(grid):
+    for row in grid:
+        for item in row:
+            #print(item)
+            item.getNeighborTiles(grid)
+
+def padInput(puzzleInput):
+    paddedInput = []
+    padRow = list((len(puzzleInput[0])+2) * ".")
+    paddedInput.append(padRow)
+    padCol = len(puzzleInput)
+    for row in puzzleInput:
+        paddedRow = ["."]
+        paddedRow.extend(row)
+        paddedRow.extend(".")
+        paddedInput.append(paddedRow)
+
+    paddedInput.append(padRow)
+    return paddedInput
+
+def doPart1():
+
+    # create the grid
+    print("Creating the grid with padded input")
+    grid = createGrid(padInput(puzzleInput))
+    #for line in padInput(puzzleInput):
+    #    print(line)
+    # get the starting tile and convert it
+    print("Getting starting tile")
+    S_tile = findSPosition(grid)
+    S_tile.get_S_type(grid)
+    S_tile.getNeighborTiles(grid)
+    print(S_tile)
+    print("Getting S_tile nieghbors")
+    for item in S_tile.neighbors:
+        print(item)
+    # give everyone in the grid neighbors 
+    print("Getting all neighbors")
+    mapNeighbors(grid)
+    # map the loop
+    print("Going through the loop")
+    length = mapLoop(grid, S_tile)
+    print(f'Total Loop Length: {length+1}')
+    print(f'Part 1 Result: {(length+1)/2}')
+
+
+doPart1()
+        
+    
+
+
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Creating the grid with padded input
+Getting starting tile
+Found "S" at: (13, 5)
+Tile Type: F at Position: (13, 5)
+Getting S_tile nieghbors
+Tile Type: 7 at Position: (14, 5)
+Tile Type: J at Position: (13, 6)
+Getting all neighbors
+Going through the loop
+Start Found
+Previous Tile: Tile Type: J at Position: (13, 6)
+Total Loop Length: 140
+Part 1 Result: 70.0
+#+end_example
+
+
+* Part 2
+
+#+BEGIN_SRC python :results output :tangle day10.py :session day10
+def mapLoopPart2(grid, start):
+
+    currTile = start.neighbors[0]
+    #print(currTile)
+
+    prevTile = start
+    startFound = 0
+    count = 0
+    loop = [start]
+    while (not startFound):
+        temp = currTile
+        currTile = getNextTile(currTile, prevTile)
+        prevTile = temp
+        count += 1
+        if currTile == start:
+            #print("Start Found")
+            #print(f'Previous Tile: {prevTile}')
+            startFound = 1
+        loop.append(currTile)
+    return loop
+
+
+
+def checkInsideLoop(grid, loop):
+    outside = set()
+    for y_count, row in enumerate(grid):
+        within = False
+        up = None
+        for x_count, itemTile in enumerate(row):
+            item = itemTile.tile
+
+            if item == "|":
+                assert up is None
+                within = not within
+
+            elif item == "-":
+                assert up is not None
+
+            elif item in "LF":
+                #print(f'Fails: {itemTile}')
+                assert up is None
+                up = item == "L"
+
+            elif item in "7J":
+                assert up is not None
+                if item != ("J" if up else "7"):
+                    within = not within
+                up = None
+
+            elif item == ".":
+                pass
+
+            else:
+                raise RuntimeError(f"unexpected character (horizontal): {item}")
+
+            if not within:
+                outside.add((x_count, y_count))
+
+    loopCoords = []
+    for item in loop:
+        loopCoords.append((item.x, item.y))
+
+    loopSet = set(loopCoords)
+    # change length because of the padding I did
+    len_col = len(grid)
+    print("len_col: {}".format(len_col))
+
+    len_row = len(grid[0])
+    print("len_row:  {}".format(len_row))
+
+    len_grid = len_col * len_row
+    print("len_grid: {}".format(len_grid))
+
+    len_out = len(outside)
+    print("len_out: {}".format(len_out))
+
+    len_loop = len(loopSet)
+    print("len_loop: {}".format(len_loop))
+
+    len_out_loop = len(outside | loopSet)
+    print("len_out_loop: {}".format(len_out_loop))
+
+    inside_total = (len_grid) - len_out_loop
+    print(f'Part 2 Result: {inside_total}')
+
+def convertOutsideLoop(grid, loop):
+    for row in grid:
+        for item in row:
+            if item not in loop:
+                item.tile = "."
+
+
+def doPart2():
+
+    # create the grid
+    print("Creating the grid with padded input")
+    grid = createGrid(padInput(puzzleInput))
+
+    print("Getting starting tile")
+    S_tile = findSPosition(grid)
+    S_tile.get_S_type(grid)
+    S_tile.getNeighborTiles(grid)
+
+    print("Getting all neighbors")
+    mapNeighbors(grid)
+
+    print("Going through the loop")
+    loop = mapLoopPart2(grid, S_tile)
+    #print(len(loop)/2)
+
+    print("Checking if constrained by Loop")
+    convertOutsideLoop(grid, loop)
+    printGrid(grid)
+    checkInsideLoop(grid, loop)
+
+
+doPart2()
+
+
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Creating the grid with padded input
+Getting starting tile
+Found "S" at: (13, 5)
+Getting all neighbors
+Going through the loop
+Checking if constrained by Loop
+Tile Type: . at Position: (0, 0)
+Tile Type: . at Position: (1, 0)
+Tile Type: . at Position: (2, 0)
+Tile Type: . at Position: (3, 0)
+Tile Type: . at Position: (4, 0)
+Tile Type: . at Position: (5, 0)
+Tile Type: . at Position: (6, 0)
+Tile Type: . at Position: (7, 0)
+Tile Type: . at Position: (8, 0)
+Tile Type: . at Position: (9, 0)
+Tile Type: . at Position: (10, 0)
+Tile Type: . at Position: (11, 0)
+Tile Type: . at Position: (12, 0)
+Tile Type: . at Position: (13, 0)
+Tile Type: . at Position: (14, 0)
+Tile Type: . at Position: (15, 0)
+Tile Type: . at Position: (16, 0)
+Tile Type: . at Position: (17, 0)
+Tile Type: . at Position: (18, 0)
+Tile Type: . at Position: (19, 0)
+Tile Type: . at Position: (20, 0)
+Tile Type: . at Position: (21, 0)
+Tile Type: . at Position: (0, 1)
+Tile Type: . at Position: (1, 1)
+Tile Type: F at Position: (2, 1)
+Tile Type: - at Position: (3, 1)
+Tile Type: - at Position: (4, 1)
+Tile Type: - at Position: (5, 1)
+Tile Type: - at Position: (6, 1)
+Tile Type: 7 at Position: (7, 1)
+Tile Type: F at Position: (8, 1)
+Tile Type: 7 at Position: (9, 1)
+Tile Type: F at Position: (10, 1)
+Tile Type: 7 at Position: (11, 1)
+Tile Type: F at Position: (12, 1)
+Tile Type: 7 at Position: (13, 1)
+Tile Type: F at Position: (14, 1)
+Tile Type: - at Position: (15, 1)
+Tile Type: 7 at Position: (16, 1)
+Tile Type: . at Position: (17, 1)
+Tile Type: . at Position: (18, 1)
+Tile Type: . at Position: (19, 1)
+Tile Type: . at Position: (20, 1)
+Tile Type: . at Position: (21, 1)
+Tile Type: . at Position: (0, 2)
+Tile Type: . at Position: (1, 2)
+Tile Type: | at Position: (2, 2)
+Tile Type: F at Position: (3, 2)
+Tile Type: - at Position: (4, 2)
+Tile Type: - at Position: (5, 2)
+Tile Type: 7 at Position: (6, 2)
+Tile Type: | at Position: (7, 2)
+Tile Type: | at Position: (8, 2)
+Tile Type: | at Position: (9, 2)
+Tile Type: | at Position: (10, 2)
+Tile Type: | at Position: (11, 2)
+Tile Type: | at Position: (12, 2)
+Tile Type: | at Position: (13, 2)
+Tile Type: | at Position: (14, 2)
+Tile Type: F at Position: (15, 2)
+Tile Type: J at Position: (16, 2)
+Tile Type: . at Position: (17, 2)
+Tile Type: . at Position: (18, 2)
+Tile Type: . at Position: (19, 2)
+Tile Type: . at Position: (20, 2)
+Tile Type: . at Position: (21, 2)
+Tile Type: . at Position: (0, 3)
+Tile Type: . at Position: (1, 3)
+Tile Type: | at Position: (2, 3)
+Tile Type: | at Position: (3, 3)
+Tile Type: . at Position: (4, 3)
+Tile Type: F at Position: (5, 3)
+Tile Type: J at Position: (6, 3)
+Tile Type: | at Position: (7, 3)
+Tile Type: | at Position: (8, 3)
+Tile Type: | at Position: (9, 3)
+Tile Type: | at Position: (10, 3)
+Tile Type: | at Position: (11, 3)
+Tile Type: | at Position: (12, 3)
+Tile Type: | at Position: (13, 3)
+Tile Type: | at Position: (14, 3)
+Tile Type: L at Position: (15, 3)
+Tile Type: 7 at Position: (16, 3)
+Tile Type: . at Position: (17, 3)
+Tile Type: . at Position: (18, 3)
+Tile Type: . at Position: (19, 3)
+Tile Type: . at Position: (20, 3)
+Tile Type: . at Position: (21, 3)
+Tile Type: . at Position: (0, 4)
+Tile Type: F at Position: (1, 4)
+Tile Type: J at Position: (2, 4)
+Tile Type: L at Position: (3, 4)
+Tile Type: 7 at Position: (4, 4)
+Tile Type: L at Position: (5, 4)
+Tile Type: 7 at Position: (6, 4)
+Tile Type: L at Position: (7, 4)
+Tile Type: J at Position: (8, 4)
+Tile Type: L at Position: (9, 4)
+Tile Type: J at Position: (10, 4)
+Tile Type: | at Position: (11, 4)
+Tile Type: | at Position: (12, 4)
+Tile Type: L at Position: (13, 4)
+Tile Type: J at Position: (14, 4)
+Tile Type: . at Position: (15, 4)
+Tile Type: L at Position: (16, 4)
+Tile Type: - at Position: (17, 4)
+Tile Type: 7 at Position: (18, 4)
+Tile Type: . at Position: (19, 4)
+Tile Type: . at Position: (20, 4)
+Tile Type: . at Position: (21, 4)
+Tile Type: . at Position: (0, 5)
+Tile Type: L at Position: (1, 5)
+Tile Type: - at Position: (2, 5)
+Tile Type: - at Position: (3, 5)
+Tile Type: J at Position: (4, 5)
+Tile Type: . at Position: (5, 5)
+Tile Type: L at Position: (6, 5)
+Tile Type: 7 at Position: (7, 5)
+Tile Type: . at Position: (8, 5)
+Tile Type: . at Position: (9, 5)
+Tile Type: . at Position: (10, 5)
+Tile Type: L at Position: (11, 5)
+Tile Type: J at Position: (12, 5)
+Tile Type: F at Position: (13, 5)
+Tile Type: . at Position: (14, 5)
+Tile Type: F at Position: (15, 5)
+Tile Type: - at Position: (16, 5)
+Tile Type: 7 at Position: (17, 5)
+Tile Type: L at Position: (18, 5)
+Tile Type: 7 at Position: (19, 5)
+Tile Type: . at Position: (20, 5)
+Tile Type: . at Position: (21, 5)
+Tile Type: . at Position: (0, 6)
+Tile Type: . at Position: (1, 6)
+Tile Type: . at Position: (2, 6)
+Tile Type: . at Position: (3, 6)
+Tile Type: . at Position: (4, 6)
+Tile Type: F at Position: (5, 6)
+Tile Type: - at Position: (6, 6)
+Tile Type: J at Position: (7, 6)
+Tile Type: . at Position: (8, 6)
+Tile Type: . at Position: (9, 6)
+Tile Type: F at Position: (10, 6)
+Tile Type: 7 at Position: (11, 6)
+Tile Type: F at Position: (12, 6)
+Tile Type: J at Position: (13, 6)
+Tile Type: | at Position: (14, 6)
+Tile Type: L at Position: (15, 6)
+Tile Type: 7 at Position: (16, 6)
+Tile Type: L at Position: (17, 6)
+Tile Type: 7 at Position: (18, 6)
+Tile Type: L at Position: (19, 6)
+Tile Type: 7 at Position: (20, 6)
+Tile Type: . at Position: (21, 6)
+Tile Type: . at Position: (0, 7)
+Tile Type: . at Position: (1, 7)
+Tile Type: . at Position: (2, 7)
+Tile Type: . at Position: (3, 7)
+Tile Type: . at Position: (4, 7)
+Tile Type: L at Position: (5, 7)
+Tile Type: 7 at Position: (6, 7)
+Tile Type: . at Position: (7, 7)
+Tile Type: F at Position: (8, 7)
+Tile Type: 7 at Position: (9, 7)
+Tile Type: | at Position: (10, 7)
+Tile Type: | at Position: (11, 7)
+Tile Type: L at Position: (12, 7)
+Tile Type: 7 at Position: (13, 7)
+Tile Type: | at Position: (14, 7)
+Tile Type: . at Position: (15, 7)
+Tile Type: L at Position: (16, 7)
+Tile Type: 7 at Position: (17, 7)
+Tile Type: L at Position: (18, 7)
+Tile Type: 7 at Position: (19, 7)
+Tile Type: | at Position: (20, 7)
+Tile Type: . at Position: (21, 7)
+Tile Type: . at Position: (0, 8)
+Tile Type: . at Position: (1, 8)
+Tile Type: . at Position: (2, 8)
+Tile Type: . at Position: (3, 8)
+Tile Type: . at Position: (4, 8)
+Tile Type: . at Position: (5, 8)
+Tile Type: | at Position: (6, 8)
+Tile Type: F at Position: (7, 8)
+Tile Type: J at Position: (8, 8)
+Tile Type: L at Position: (9, 8)
+Tile Type: J at Position: (10, 8)
+Tile Type: | at Position: (11, 8)
+Tile Type: F at Position: (12, 8)
+Tile Type: J at Position: (13, 8)
+Tile Type: | at Position: (14, 8)
+Tile Type: F at Position: (15, 8)
+Tile Type: 7 at Position: (16, 8)
+Tile Type: | at Position: (17, 8)
+Tile Type: . at Position: (18, 8)
+Tile Type: L at Position: (19, 8)
+Tile Type: J at Position: (20, 8)
+Tile Type: . at Position: (21, 8)
+Tile Type: . at Position: (0, 9)
+Tile Type: . at Position: (1, 9)
+Tile Type: . at Position: (2, 9)
+Tile Type: . at Position: (3, 9)
+Tile Type: . at Position: (4, 9)
+Tile Type: F at Position: (5, 9)
+Tile Type: J at Position: (6, 9)
+Tile Type: L at Position: (7, 9)
+Tile Type: - at Position: (8, 9)
+Tile Type: 7 at Position: (9, 9)
+Tile Type: . at Position: (10, 9)
+Tile Type: | at Position: (11, 9)
+Tile Type: | at Position: (12, 9)
+Tile Type: . at Position: (13, 9)
+Tile Type: | at Position: (14, 9)
+Tile Type: | at Position: (15, 9)
+Tile Type: | at Position: (16, 9)
+Tile Type: | at Position: (17, 9)
+Tile Type: . at Position: (18, 9)
+Tile Type: . at Position: (19, 9)
+Tile Type: . at Position: (20, 9)
+Tile Type: . at Position: (21, 9)
+Tile Type: . at Position: (0, 10)
+Tile Type: . at Position: (1, 10)
+Tile Type: . at Position: (2, 10)
+Tile Type: . at Position: (3, 10)
+Tile Type: . at Position: (4, 10)
+Tile Type: L at Position: (5, 10)
+Tile Type: - at Position: (6, 10)
+Tile Type: - at Position: (7, 10)
+Tile Type: - at Position: (8, 10)
+Tile Type: J at Position: (9, 10)
+Tile Type: . at Position: (10, 10)
+Tile Type: L at Position: (11, 10)
+Tile Type: J at Position: (12, 10)
+Tile Type: . at Position: (13, 10)
+Tile Type: L at Position: (14, 10)
+Tile Type: J at Position: (15, 10)
+Tile Type: L at Position: (16, 10)
+Tile Type: J at Position: (17, 10)
+Tile Type: . at Position: (18, 10)
+Tile Type: . at Position: (19, 10)
+Tile Type: . at Position: (20, 10)
+Tile Type: . at Position: (21, 10)
+Tile Type: . at Position: (0, 11)
+Tile Type: . at Position: (1, 11)
+Tile Type: . at Position: (2, 11)
+Tile Type: . at Position: (3, 11)
+Tile Type: . at Position: (4, 11)
+Tile Type: . at Position: (5, 11)
+Tile Type: . at Position: (6, 11)
+Tile Type: . at Position: (7, 11)
+Tile Type: . at Position: (8, 11)
+Tile Type: . at Position: (9, 11)
+Tile Type: . at Position: (10, 11)
+Tile Type: . at Position: (11, 11)
+Tile Type: . at Position: (12, 11)
+Tile Type: . at Position: (13, 11)
+Tile Type: . at Position: (14, 11)
+Tile Type: . at Position: (15, 11)
+Tile Type: . at Position: (16, 11)
+Tile Type: . at Position: (17, 11)
+Tile Type: . at Position: (18, 11)
+Tile Type: . at Position: (19, 11)
+Tile Type: . at Position: (20, 11)
+Tile Type: . at Position: (21, 11)
+#+end_example
+
+
+* Functions that didn't help
+
+#+BEGIN_SRC python
+def checkIfCanEscape(currTile, grid, loop):
+    north_inside = False
+    south_inside = False
+    east_inside = False
+    west_inside = False
+
+    # check north escape
+    north = currTile
+    loopFlag = False
+    while (north.y >= 1):
+        north = getPosition(grid, north.x, north.y-1)
+        if (north in loop) and (north.tile not in ["", "", ""]):
+            loopFlag = True
+            north_inside = True
+
+    # check south escape
+    south = currTile
+    loopFlag = False
+    while (south.y <= (len(grid)-2)):
+        south = getPosition(grid, south.x, south.y+1)
+        if north in loop:
+            loopFlag = True
+            south_inside = True
+
+    # check east escape
+    east = currTile
+    loopFlag = False
+    while (east.x <= (len(grid[0])-2)):
+        east = getPosition(grid, east.x+1, east.y)
+        if east in loop:
+            loopFlag = True
+            east_inside = True
+
+    # check west escape
+    west = currTile
+    loopFlag = False
+    while (west.x >= 1):
+        west = getPosition(grid, west.x-1, west.y)
+        if west in loop:
+            loopFlag = True
+            east_inside = True
+
+    if north_inside and south_inside and east_inside and west_inside:
+        tile.inside = True
+
+def checkEscapeAll(grid, loop):
+
+    for row in grid:
+        for item in row:
+            #print(item)
+            checkIfCanEscape(item, grid, loop)
+
+#+END_SRC

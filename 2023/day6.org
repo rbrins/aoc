@@ -1,0 +1,128 @@
+
+
+* Part 1 
+
+#+BEGIN_SRC python :results output
+  
+  import string
+
+  puzzleInput = list(map((lambda line : line.strip()), open("./day6.txt", "r").readlines()))
+
+  timeInts = [int(i) for i in puzzleInput[0][10:].split(" ") if i != ""]
+  distanceInts = [int(i) for i in puzzleInput[1][10:].split(" ") if i != ""]
+
+  #print(timeInts)
+  #print(distanceInts)
+
+  def getDistance(timeMax):
+      #distance = speed * time
+      distances = []
+      for i in range(1, timeMax + 1):
+	  timeHeld = i
+	  timeRelease = timeMax - timeHeld
+	  distances.append(timeHeld * timeRelease)
+      #print(distances)
+      return distances
+
+  distances = [getDistance(i) for i in timeInts]
+  #print(distances)
+
+  count = 0
+  recordNums = []
+  recordCount = 0
+
+  for race in distances:
+      for i in race:
+	  if i > distanceInts[count]:
+	      #print(f"i: {i}, current record: {distanceInts[count]}")
+	      recordCount += 1
+
+      recordNums.append(recordCount)
+      recordCount = 0
+      count += 1
+
+  #print(recordNums)
+  part1result = 1
+  for x in recordNums:
+      part1result = part1result * x
+
+  print(part1result)
+#+END_SRC
+
+#+RESULTS:
+: 3317888
+
+* Part 2 
+
+#+BEGIN_SRC python :results output
+# fully maintainable
+print(len([(int("".join([i for i in list(map((lambda line : line.strip()), open("./day6.txt", "r").readlines()))[0][10:].split(" ") if i != ""])))*i for i in range(1,int("".join([i for i in list(map((lambda line : line.strip()), open("./day6.txt", "r").readlines()))[0][10:].split(" ") if i != ""]))) if ((int("".join([i for i in list(map((lambda line : line.strip()), open("./day6.txt", "r").readlines()))[0][10:].split(" ") if i != ""])))-i) * i > int("".join([i for i in list(map((lambda line : line.strip()), open("./day6.txt", "r").readlines()))[1][10:].split(" ") if i != ""]))]))
+
+#+END_SRC
+
+#+RESULTS:
+: 24655068
+
+
+* Part 1 again - Haskell
+
+#+BEGIN_SRC haskell :results output
+
+--main :: IO ()
+--main = do
+  -- Read the contents of the file
+  content <- readFile "./day6.txt"
+  -- Split the contents into a list of strings
+  let stringsList = lines content
+  let timeList = map (read::String->Int) (take 4 (drop 1 (concatMap words stringsList)))
+  let distList = map (read::String->Int) (drop 6 (concatMap words stringsList))
+
+  :t timeList
+  :t distList
+
+  mapM_ putStrLn (map show timeList)
+  mapM_ putStrLn (map show distList)
+
+  getDistance maxTime = map (\x -> ((maxTime - x) * x))  [1..maxTime]
+
+  let allDist = map getDistance timeList
+  :t allDist
+--  mapM_ putStrLn (map show allDist)
+
+
+--  let testComp = map compDist (take 1 timeList) (take 1 distList)
+
+--  putStrLn (show testComp)
+
+  compDist (currDistList, recordDist) = length (filter (\x -> x > recordDist) currDistList)
+
+  let testComp = zip allDist distList
+  let resultList = map compDist testComp
+
+  :{ --needed for ghci, which is what org-babel uses
+  productOfList [] = 1
+  productOfList (x:xs) = x * productOfList xs
+  :}
+
+  putStrLn (show (productOfList resultList))
+
+
+  
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci> timeList :: [Int]
+distList :: [Int]
+ghci> 42
+89
+91
+89
+308
+1170
+1291
+1467
+ghci> ghci> ghci> ghci> allDist :: [[Int]]
+ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci> ghci| ghci| ghci| ghci> ghci> 3317888
+#+end_example
