@@ -1,0 +1,70 @@
+#+TITLE: AOC - Day 2 - Guile Scheme
+#+DATE: [2024-12-10 Tue]
+AUTHOR: Russell Brinson
+#+PROPERTY: header-args :tangle ~/projects/aoc/2024/day02.scm
+
+* Step 1 - Get Puzzle Input Loaded
+
+#+BEGIN_SRC scheme 
+  (use-modules (ice-9 rdelim))
+  ;;(define inputFile (open-input-file "/home/russell/projects/aoc/2024/day02-data.scm"))
+  ;;(display (read-line inputFile))
+  (load "/home/russell/projects/aoc/2024/day02-data.scm")
+
+
+#+END_SRC
+
+#+RESULTS:
+
+
+* Step 2 - Parse/Format
+- figure out which reports (a line in the input) are safe
+- is safe if both are true:
+  - levels are either all increaming or all decreasing
+  - any two adjacent levels differ by at least one and at most three
+
+
+#+BEGIN_SRC scheme
+  (define (isComp? report comparion)
+    (define status (comparion (car report) (car (cdr report))))
+    (if status
+        (if (null? (cdr (cdr report)))
+  	  status
+  	  (isComp? (cdr report) comparion))
+        status))
+
+  (define (isIncreasing? report)
+    (define status (< (car report) (car (cdr report))))
+    (if status
+        status
+        (if (null? (cdr (cdr report)))
+  	  status
+  	  (isIncreasing? (cdr report))
+    )))
+
+  (define (isDecreasing? report)
+    (define status (> (car report) (car (cdr report))))
+    (if status
+        status
+        (if (null? (cdr (cdr report)))
+  	  status
+  	  (isDecreasing? (cdr report))
+    )))
+
+
+  (define (checkAdjacentLevels? report) 
+    (define levelDiffer (abs (- (car report) (car (cdr report)))))
+    (if (or (> levelDiffer 3) (zero? levelDiffer))
+        #f
+        (if (null? (cdr (cdr report)))
+  	  #t
+  	  (checkAdjacentLevels? (cdr report)))))
+
+  (define (isSafe? report) 
+    (and (checkAdjacentLevels? report) (or (isComp? report <) (isComp? report >))))
+
+  (define safeReports (filter (lambda (x) (eq? #t x)) (map isSafe? inputData)))
+  (display (length safeReports))
+  (newline)
+
+#+END_SRC
