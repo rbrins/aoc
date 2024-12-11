@@ -68,3 +68,34 @@ AUTHOR: Russell Brinson
   (newline)
 
 #+END_SRC
+
+* Part 2 - Problem Dampener
+- the report can tolerate a single bad level
+- so removing a single level would make the report safe, then it is acceptable
+
+- we will still use the =isSafe?= predicate above 
+- and if a procedure is initially failing, will run it through a piecewise checker?
+
+#+BEGIN_SRC scheme
+  ;; removes kth element and returns list without in
+  (define (list-remove! lst k)
+    (append (list-head lst k) (list-tail lst (+ k 1))))
+
+  (define (problemDamp? lst k)
+    (if (isSafe? lst)
+        #t
+        (if (>= k (length lst))
+  	  #f
+  	  (if (isSafe? (list-remove! lst k))
+  	      #t
+  	      (problemDamp? lst (+ k 1))))))
+
+  (define (mapProblemDamp k)
+    (lambda (x)
+      (problemDamp? x k)))
+
+  (define dampable (filter (lambda (x) (eq? #t x)) 
+  			 (map (mapProblemDamp 0) inputData)))
+  (display (length dampable))
+  (newline)
+#+END_SRC
