@@ -1,0 +1,87 @@
+#+TITLE: AOC - Day 3 - Guile Scheme
+#+DATE: [2024-12-10 Tue]
+AUTHOR: Russell Brinson
+#+PROPERTY: header-args :tangle ~/projects/aoc/2024/day03.scm
+
+* Step 1 - Get Puzzle Input Loaded
+
+#+BEGIN_SRC scheme 
+  (use-modules (ice-9 rdelim))
+  ;;(define inputFile (open-input-file "/home/russell/projects/aoc/2024/day02-data.scm"))
+  ;;(display (read-line inputFile))
+  (load "/home/russell/projects/aoc/2024/day03-data.scm")
+
+  (define exampleData "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))")
+#+END_SRC
+
+#+RESULTS:
+: #<unspecified>
+
+* Step 2 - Add all products of mul(x,y)
+
+#+BEGIN_SRC scheme
+  ;;(use-modules (ice-9 rdelim))
+  ;;(define inputFile (open-input-file "/home/russell/projects/aoc/2024/day02-data.scm"))
+  ;;(display (read-line inputFile))
+  ;;(load "/home/russell/projects/aoc/2024/day03-data.scm")
+
+  (use-modules (ice-9 regex))
+  (define exampleData "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))")
+
+  (define (extractNums mul)
+    (define captureNumregex (make-regexp "mul\\\(([0-9]+),([0-9]+)\\)")) ;;mul\((\d+),(\d+)\)
+    (define mulmatch (regexp-exec captureNumregex mul))
+    (* (string->number (match:substring mulmatch 1)) (string->number (match:substring mulmatch 2))))
+
+
+  (define mulregex (make-regexp "mul\\\([0-9]+,[0-9]+\\)"))
+
+  ;;(define testVal (regexp-exec mulregex "mul(4,4)")) ;;#(mul(234,123123) (0 . 15) (4 . 7) (8 . 14))
+  ;;(define testVal (regexp-exec mulregex exampleData)) 
+
+  ;;(define part1result (apply + (map extractNums (map match:substring (list-matches mulregex inputData)))))
+
+  (display "--------- Starting list-matches of muls ---------") (newline)
+  (define list-list-matches (map (lambda (x) (list-matches mulregex x)) inputData))
+
+  (display "--------- Starting substrings of each match ---------") (newline) 
+  (define list-list-substrings (map (lambda (x) (map match:substring x)) list-list-matches))
+
+  (display "--------- Starting extracting numbers of each substring ---------")  (newline)
+  (define list-list-nums (map (lambda (x) (map extractNums x)) list-list-substrings))
+  ;;(define list-list-nums (map (extractNums list-list-substrings)))
+
+  (display "--------- Starting addition of each section ---------")  (newline)
+  (define list-of-sums (map (lambda (x) (apply + x)) list-list-nums))
+
+  (display "--------- Starting adding each section together ---------")  (newline)
+  (define part1result (apply + list-of-sums))
+
+  (display "--------- Part 1 Results ---------")  (newline)
+  (display part1result)
+  (newline)
+
+  ;; (define (mul stringxy) 
+  ;;   (string-index (substring stringxy 4 (- (string-length stringxy) 1)) 
+  ;; 		","))
+
+  ;; (define (isComma?1 x)
+  ;;   (equal? x ","))
+
+  ;; (define isComma? 
+  ;;   (lambda (x) (eqv? "," x)))
+
+  ;; (define (mul stringxy) 
+  ;;   (string-index stringxy 
+  ;; 		isComma?))
+
+  ;; (isComma? ",")
+
+  ;; (string-filter isComma? "mul(x,y)")
+
+  ;; (mul "mul(x,y)")
+
+  #+END_SRC
+
+#+RESULTS:
+: #<unspecified>
